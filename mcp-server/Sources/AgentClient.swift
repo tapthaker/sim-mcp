@@ -53,7 +53,7 @@ class AgentClient {
         process.environment = env
 
         // Redirect stdout/stderr to log files so they don't interfere with MCP stdio
-        let logDir = NSTemporaryDirectory() + "simulator-mcp-logs"
+        let logDir = NSTemporaryDirectory() + "sim-mcp-logs"
         try? FileManager.default.createDirectory(atPath: logDir, withIntermediateDirectories: true)
         let logFile = FileHandle(forWritingAtPath: "\(logDir)/agent-\(udid).log")
             ?? { () -> FileHandle in

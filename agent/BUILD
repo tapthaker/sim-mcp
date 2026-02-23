@@ -9,7 +9,7 @@ swift_library(
 
 ios_application(
     name = "HostApp",
-    bundle_id = "com.simulator-mcp.HostApp",
+    bundle_id = "com.sim-mcp.HostApp",
     families = ["iphone", "ipad"],
     infoplists = ["HostApp/Info.plist"],
     minimum_os_version = "16.0",

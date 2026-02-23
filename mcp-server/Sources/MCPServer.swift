@@ -60,7 +60,7 @@ class MCPServer {
                 ]
             ],
             "serverInfo": [
-                "name": "simulator-mcp",
+                "name": "sim-mcp",
                 "version": "0.1.0"
             ]
         ]

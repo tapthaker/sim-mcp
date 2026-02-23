@@ -8,7 +8,7 @@ swift_library(
 )
 
 macos_command_line_application(
-    name = "simulator-mcp",
+    name = "sim-mcp",
     minimum_os_version = "13.0",
     deps = [":MCPServerLib"],
     visibility = ["//visibility:public"],

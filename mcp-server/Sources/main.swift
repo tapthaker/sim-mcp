@@ -4,7 +4,7 @@ import Foundation
 setbuf(stdout, nil)
 
 func log(_ message: String) {
-    FileHandle.standardError.write(Data(("[simulator-mcp] \(message)\n").utf8))
+    FileHandle.standardError.write(Data(("[sim-mcp] \(message)\n").utf8))
 }
 
 log("Starting MCP server")
