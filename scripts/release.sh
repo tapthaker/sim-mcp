@@ -138,7 +138,7 @@ echo "Staging directory: $DIST_DIR/sim-mcp/"
 ls -la "$DIST_DIR/sim-mcp/"
 
 # Create tarball
-VERSION="${1:-0.3.0}"
+VERSION="${1:-0.4.0}"
 TARBALL="$DIST_DIR/sim-mcp-${VERSION}-darwin-arm64.tar.gz"
 tar -czf "$TARBALL" -C "$DIST_DIR" sim-mcp
 echo ""
