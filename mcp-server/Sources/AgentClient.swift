@@ -31,10 +31,44 @@ class AgentClient {
         let binaryDir = URL(fileURLWithPath: binaryPath).deletingLastPathComponent().path
         let installDir = (binaryDir as NSString).expandingTildeInPath
 
-        let xctestrunPath = "\(installDir)/AgentTest.xctestrun"
+        let xctestrunTemplate = "\(installDir)/AgentTest.xctestrun"
 
-        guard FileManager.default.fileExists(atPath: xctestrunPath) else {
-            return .failure(AgentError.missingXctestrun(xctestrunPath))
+        guard FileManager.default.fileExists(atPath: xctestrunTemplate) else {
+            return .failure(AgentError.missingXctestrun(xctestrunTemplate))
+        }
+
+        // Discover Xcode developer path for platform frameworks
+        let xcodeDev = discoverXcodeDeveloperPath()
+        let platformFrameworks = "\(xcodeDev)/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks"
+        let platformUsrLib = "\(xcodeDev)/Platforms/iPhoneSimulator.platform/Developer/usr/lib"
+
+        // Create a per-port copy of the xctestrun with the correct AGENT_PORT,
+        // resolve __TESTROOT__ to the install directory (since the temp copy
+        // lives in a different directory than the runner/xctest bundles),
+        // and inject Xcode platform paths for XCTest.framework resolution
+        let xctestrunPath = NSTemporaryDirectory() + "sim-mcp-agent-\(port).xctestrun"
+        do {
+            var plistData = try Data(contentsOf: URL(fileURLWithPath: xctestrunTemplate))
+            if var plistStr = String(data: plistData, encoding: .utf8) {
+                plistStr = plistStr.replacingOccurrences(of: "<string>8100</string>", with: "<string>\(port)</string>")
+
+                // Inject Xcode platform paths into DYLD vars before resolving __TESTROOT__
+                plistStr = plistStr.replacingOccurrences(
+                    of: "<key>DYLD_FRAMEWORK_PATH</key>\n            <string>__TESTROOT__/AgentTest-Runner.app/Frameworks</string>",
+                    with: "<key>DYLD_FRAMEWORK_PATH</key>\n            <string>__TESTROOT__/AgentTest-Runner.app/Frameworks:\(platformFrameworks)</string>"
+                )
+                plistStr = plistStr.replacingOccurrences(
+                    of: "<key>DYLD_LIBRARY_PATH</key>\n            <string>__TESTROOT__/AgentTest-Runner.app/Frameworks</string>",
+                    with: "<key>DYLD_LIBRARY_PATH</key>\n            <string>__TESTROOT__/AgentTest-Runner.app/Frameworks:\(platformUsrLib):\(platformFrameworks)</string>"
+                )
+
+                // Resolve __TESTROOT__ to actual install directory
+                plistStr = plistStr.replacingOccurrences(of: "__TESTROOT__", with: installDir)
+                plistData = Data(plistStr.utf8)
+            }
+            try plistData.write(to: URL(fileURLWithPath: xctestrunPath))
+        } catch {
+            return .failure(AgentError.launchFailed("Failed to prepare xctestrun: \(error)"))
         }
 
         let process = Process()
@@ -43,23 +77,17 @@ class AgentClient {
             "test-without-building",
             "-xctestrun", xctestrunPath,
             "-destination", "platform=iOS Simulator,id=\(udid)",
-            "-only-testing:AgentTest/AgentTest/testRunAgent"
         ]
 
-        // Set port via environment variable
-        var env = ProcessInfo.processInfo.environment
-        env["AGENT_PORT"] = "\(port)"
-        // Also inject via xctestrun env — handled by the xctestrun plist
-        process.environment = env
+        process.environment = ProcessInfo.processInfo.environment
 
         // Redirect stdout/stderr to log files so they don't interfere with MCP stdio
         let logDir = NSTemporaryDirectory() + "sim-mcp-logs"
         try? FileManager.default.createDirectory(atPath: logDir, withIntermediateDirectories: true)
-        let logFile = FileHandle(forWritingAtPath: "\(logDir)/agent-\(udid).log")
-            ?? { () -> FileHandle in
-                FileManager.default.createFile(atPath: "\(logDir)/agent-\(udid).log", contents: nil)
-                return FileHandle(forWritingAtPath: "\(logDir)/agent-\(udid).log")!
-            }()
+        // Truncate existing log file for a clean start
+        let logPath = "\(logDir)/agent-\(udid).log"
+        FileManager.default.createFile(atPath: logPath, contents: nil)
+        let logFile = FileHandle(forWritingAtPath: logPath)!
 
         process.standardOutput = logFile
         process.standardError = logFile
@@ -105,7 +133,7 @@ class AgentClient {
         }
 
         let url = URL(string: "http://localhost:\(port)\(path)")!
-        var request = URLRequest(url: url, timeoutInterval: 30)
+        var request = URLRequest(url: url, timeoutInterval: 60)
         request.httpMethod = "POST"
         request.httpBody = jsonData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -134,6 +162,27 @@ class AgentClient {
         // Format agent response as MCP text content
         let responseText = String(data: (try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])) ?? Data(), encoding: .utf8) ?? "{}"
         return ["content": [["type": "text", "text": responseText]]]
+    }
+
+    // MARK: - Xcode discovery
+
+    private func discoverXcodeDeveloperPath() -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
+        process.arguments = ["-p"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
+                return path
+            }
+        } catch {}
+        // Fallback to default Xcode path
+        return "/Applications/Xcode.app/Contents/Developer"
     }
 
     // MARK: - Health check
