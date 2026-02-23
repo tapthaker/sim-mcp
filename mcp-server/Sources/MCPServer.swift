@@ -61,7 +61,7 @@ class MCPServer {
             ],
             "serverInfo": [
                 "name": "sim-mcp",
-                "version": "0.4.0"
+                "version": version
             ]
         ]
         sendResult(id: id, result: result)

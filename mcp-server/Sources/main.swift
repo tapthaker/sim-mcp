@@ -1,5 +1,14 @@
 import Foundation
 
+let version = "0.4.0"
+
+// Handle --version / -v flag
+let args = CommandLine.arguments
+if args.contains("--version") || args.contains("-v") {
+    print("sim-mcp \(version)")
+    exit(0)
+}
+
 // Disable stdout buffering so MCP responses are sent immediately
 setbuf(stdout, nil)
 
