@@ -60,7 +60,8 @@ class AgentTest: XCTestCase {
             guard let text = body["text"] as? String else {
                 return (400, ["error": "Missing text"])
             }
-            let result = self.uiActions.typeText(text)
+            let bundleId = body["bundleId"] as? String
+            let result = self.uiActions.typeText(text, bundleId: bundleId)
             return result ? (200, ["success": true]) : (500, ["error": "Type text failed"])
         }
 

@@ -107,10 +107,11 @@ struct ToolRegistry {
             ),
             tool(
                 name: "type_text",
-                description: "Type text into the focused element",
+                description: "Type text into the focused element. Pass bundleId of the foreground app for reliable text input.",
                 properties: [
                     "udid": string("Simulator UDID"),
-                    "text": string("Text to type")
+                    "text": string("Text to type"),
+                    "bundleId": string("Bundle ID of the foreground app (recommended for reliable input)")
                 ],
                 required: ["udid", "text"]
             ),

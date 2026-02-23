@@ -43,9 +43,15 @@ class UIActions {
         }
     }
 
-    func typeText(_ text: String) -> Bool {
+    func typeText(_ text: String, bundleId: String?) -> Bool {
         return onMain {
-            let app = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let app: XCUIApplication
+            if let bundleId = bundleId {
+                app = XCUIApplication(bundleIdentifier: bundleId)
+            } else {
+                // Target Springboard to find any focused text field across all apps
+                app = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            }
             app.typeText(text)
             return true
         }
