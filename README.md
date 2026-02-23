@@ -107,7 +107,7 @@ bazel build //mcp-server:sim-mcp
 bazel build //agent:AgentTest //agent:HostApp
 
 # Package release
-bash scripts/release.sh 0.2.0
+bash scripts/release.sh 0.3.0
 ```
 
 ## License

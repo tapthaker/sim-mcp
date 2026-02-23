@@ -66,6 +66,16 @@ mkdir -p "$DIST_DIR/sim-mcp/AgentTest-Runner.app/Frameworks"
 cp "$PLATFORM/Developer/usr/lib/libXCTestSwiftSupport.dylib" "$DIST_DIR/sim-mcp/AgentTest-Runner.app/Frameworks/"
 cp "$PLATFORM/Developer/usr/lib/libXCTestBundleInject.dylib" "$DIST_DIR/sim-mcp/AgentTest-Runner.app/Frameworks/"
 
+# Strip hardcoded Xcode rpath from AgentTest binary (Bazel bakes in the builder's
+# Xcode path; the generic /var/db/xcode_select_link rpath handles any Xcode location)
+HARDCODED_RPATH=$(otool -l "$DIST_DIR/sim-mcp/AgentTest-Runner.app/PlugIns/AgentTest.xctest/AgentTest" \
+    | grep -A2 LC_RPATH | grep "path /Applications/" | awk '{print $2}' || true)
+if [ -n "$HARDCODED_RPATH" ]; then
+    echo "Removing hardcoded rpath: $HARDCODED_RPATH"
+    install_name_tool -delete_rpath "$HARDCODED_RPATH" \
+        "$DIST_DIR/sim-mcp/AgentTest-Runner.app/PlugIns/AgentTest.xctest/AgentTest"
+fi
+
 # Re-codesign everything (ad-hoc for simulator)
 codesign --force --sign - "$DIST_DIR/sim-mcp/AgentTest-Runner.app/Frameworks/libXCTestSwiftSupport.dylib"
 codesign --force --sign - "$DIST_DIR/sim-mcp/AgentTest-Runner.app/Frameworks/libXCTestBundleInject.dylib"
@@ -128,7 +138,7 @@ echo "Staging directory: $DIST_DIR/sim-mcp/"
 ls -la "$DIST_DIR/sim-mcp/"
 
 # Create tarball
-VERSION="${1:-0.2.0}"
+VERSION="${1:-0.3.0}"
 TARBALL="$DIST_DIR/sim-mcp-${VERSION}-darwin-arm64.tar.gz"
 tar -czf "$TARBALL" -C "$DIST_DIR" sim-mcp
 echo ""

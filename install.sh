@@ -2,7 +2,7 @@
 set -euo pipefail
 
 INSTALL_DIR="$HOME/.sim-mcp"
-VERSION="${SIM_MCP_VERSION:-0.2.0}"
+VERSION="${SIM_MCP_VERSION:-0.3.0}"
 ARCH="$(uname -m)"
 
 # Only arm64 macOS supported
