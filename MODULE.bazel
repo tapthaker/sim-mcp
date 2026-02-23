@@ -1,0 +1,8 @@
+module(
+    name = "simulator-mcp",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "apple_support", version = "2.2.0")
+bazel_dep(name = "rules_apple", version = "4.3.3")
+bazel_dep(name = "rules_swift", version = "3.4.2")

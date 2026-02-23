@@ -1,0 +1,15 @@
+# Bazel
+/bazel-*
+MODULE.bazel.lock
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Build outputs
+/dist/

@@ -1,0 +1,11 @@
+# Build for Apple Silicon
+build --host_macos_minimum_os=13.0
+build --macos_minimum_os=13.0
+
+# iOS simulator settings
+build --ios_minimum_os=16.0
+build --ios_simulator_device="iPhone 16"
+build --ios_simulator_version=18.2
+
+# Swift settings
+build --features=swift.use_global_module_cache
